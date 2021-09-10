@@ -18,6 +18,7 @@ export default async function orders(context, { filters, shopIds } = {}) {
   const { Orders } = collections;
 
   const query = {};
+  let shopIdQueryClause = {};
   let createdAtFilter = {};
   let fulfillmentStatusFilter = {};
   let paymentStatusFilter = {};
@@ -45,7 +46,12 @@ export default async function orders(context, { filters, shopIds } = {}) {
     await context.validatePermissions("reaction:legacy:orders", "read", { shopId }); // eslint-disable-line no-await-in-loop
   }
 
-  query.shopId = { $in: shopIds };
+  shopIdQueryClause = {
+    $or: [
+      { shopId: { $in: shopIds } },
+      { shipping: { $elemMatch: { shopId: { $in: shopIds } } } }
+    ]
+  };
 
   // Add fulfillment status if provided
   if (filters && filters.fulfillmentStatus) {
@@ -97,6 +103,7 @@ export default async function orders(context, { filters, shopIds } = {}) {
 
   // Build the final query
   query.$and = [{
+    ...shopIdQueryClause,
     ...createdAtFilter,
     ...fulfillmentStatusFilter,
     ...paymentStatusFilter,
