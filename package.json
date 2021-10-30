@@ -1,27 +1,27 @@
 {
-  "name": "@reactioncommerce/api-plugin-orders",
-  "description": "Orders plugin for the Reaction API",
+  "name": "@demandcluster/api-plugin-orders",
+  "description": "Orders plugin for the Open Commerce API",
   "version": "0.0.0-development",
   "main": "index.js",
   "type": "module",
   "engines": {
     "node": ">=12.14.1"
   },
-  "homepage": "https://github.com/reactioncommerce/api-plugin-orders",
-  "url": "https://github.com/reactioncommerce/api-plugin-orders",
-  "email": "engineering@reactioncommerce.com",
+  "homepage": "https://github.com/demandcluster/api-plugin-orders",
+  "url": "https://github.com/demandcluster/api-plugin-orders",
+  "email": "engineering@demandcluster.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/reactioncommerce/api-plugin-orders.git"
+    "url": "git+https://github.com/demandcluster/api-plugin-orders.git"
   },
   "author": {
     "name": "Reaction Commerce",
-    "email": "engineering@reactioncommerce.com",
-    "url": "https://reactioncommerce.com"
+    "email": "engineering@demandcluster.com",
+    "url": "https://demandcluster.com"
   },
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/reactioncommerce/api-plugin-orders/issues"
+    "url": "https://github.com/demandcluster/api-plugin-orders/issues"
   },
   "sideEffects": false,
   "dependencies": {
