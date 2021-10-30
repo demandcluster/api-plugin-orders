@@ -20,6 +20,7 @@ const inputSchema = new SimpleSchema({
 /**
  * @summary Create all authorized payments for a potential order
  * @param {String} [accountId] The ID of the account placing the order
+ * @param {String} [orderReferenceId] The reference ID of the order payments are created for
  * @param {Object} [billingAddress] Billing address for the order as a whole
  * @param {Object} context - The application context
  * @param {String} currencyCode Currency code for interpreting the amount of all payments
@@ -32,6 +33,7 @@ const inputSchema = new SimpleSchema({
  */
 async function createPayments({
   accountId,
+  orderReferenceId,
   billingAddress,
   context,
   currencyCode,
@@ -69,6 +71,7 @@ async function createPayments({
     // Authorize this payment
     const payment = await paymentMethodConfig.functions.createAuthorizedPayment(context, {
       accountId, // optional
+      orderId: orderReferenceId,
       amount,
       billingAddress: paymentInput.billingAddress || billingAddress,
       currencyCode,
@@ -193,18 +196,6 @@ export default async function placeOrder(context, input) {
     return group;
   }));
 
-  const payments = await createPayments({
-    accountId,
-    billingAddress,
-    context,
-    currencyCode,
-    email,
-    orderTotal,
-    paymentsInput,
-    shippingAddress: shippingAddressForPayments,
-    shop
-  });
-
   // Create anonymousAccessToken if no account ID
   const fullToken = accountId ? null : getAnonymousAccessToken();
 
@@ -220,16 +211,11 @@ export default async function placeOrder(context, input) {
     discounts,
     email,
     ordererPreferredLanguage: ordererPreferredLanguage || null,
-    payments,
     shipping: finalFulfillmentGroups,
     shopId,
     surcharges: orderSurcharges,
     totalItemQuantity: finalFulfillmentGroups.reduce((sum, group) => sum + group.totalItemQuantity, 0),
-    updatedAt: now,
-    workflow: {
-      status: "new",
-      workflow: ["new"]
-    }
+    updatedAt: now
   };
 
   if (fullToken) {
@@ -277,11 +263,41 @@ export default async function placeOrder(context, input) {
     order.customFields = customFieldsFromClient;
   }
 
+  const payments = await createPayments({
+    accountId,
+    orderReferenceId: referenceId,
+    billingAddress,
+    context,
+    currencyCode,
+    email,
+    orderTotal,
+    paymentsInput,
+    shippingAddress: shippingAddressForPayments,
+    shop
+  });
+
+  order.payments = payments;
+
+  if (payments.length > 0 &&
+      !payments.some((payment) => payment.status === "created")) {
+    order.workflow = {
+      status: "awaitingPayment",
+      workflow: ["awaitingPayment"]
+    };
+  } else {
+    order.workflow = {
+      status: "new",
+      workflow: ["new"]
+    };
+  }
+
   // Validate and save
   OrderSchema.validate(order);
   await Orders.insertOne(order);
 
-  await appEvents.emit("afterOrderCreate", { createdBy: userId, order });
+  if (order.workflow.status === "new") {
+    await appEvents.emit("afterOrderCreate", { createdBy: userId, order });
+  }
 
   return {
     orders: [order],
