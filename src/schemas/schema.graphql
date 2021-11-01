@@ -1015,6 +1015,9 @@ enum OrderPaymentStatus {
 
   "A payment intent has been created"
   created
+
+  "Payment needs to be completed from external payment system"
+  pending
 }
 
 "Order status"
@@ -1027,6 +1030,9 @@ enum OrderStatus {
 
   "A new order that needs processing"
   new
+
+  "Order awaits payment to be completed before going to status new"
+  paymentPending
 
   "An order that is being processed"
   processing

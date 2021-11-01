@@ -1,4 +1,5 @@
 import sendOrderEmail from "./util/sendOrderEmail.js";
+import completeOrderPayment from "./util/completeOrderPayment.js";
 
 /**
  * @summary Called on startup
@@ -10,4 +11,7 @@ export default function ordersStartup(context) {
   const { appEvents } = context;
 
   appEvents.on("afterOrderCreate", ({ order }) => sendOrderEmail(context, order));
+
+  appEvents.on("afterPaymentCompleted", ({ orderId, paymentId }) =>
+    completeOrderPayment(context, { orderId, paymentId }));
 }
