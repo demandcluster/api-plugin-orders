@@ -21,6 +21,7 @@ const inputSchema = new SimpleSchema({
  * @summary Create all authorized payments for a potential order
  * @param {String} [accountId] The ID of the account placing the order
  * @param {String} [orderReferenceId] The reference ID of the order payments are created for
+ * @param {String} [orderToken] The token for order created from guest user
  * @param {Object} [billingAddress] Billing address for the order as a whole
  * @param {Object} context - The application context
  * @param {String} currencyCode Currency code for interpreting the amount of all payments
@@ -34,6 +35,7 @@ const inputSchema = new SimpleSchema({
 async function createPayments({
   accountId,
   orderReferenceId,
+  orderToken,
   billingAddress,
   context,
   currencyCode,
@@ -72,6 +74,7 @@ async function createPayments({
     const payment = await paymentMethodConfig.functions.createAuthorizedPayment(context, {
       accountId, // optional
       orderId: orderReferenceId,
+      orderToken,
       amount,
       billingAddress: paymentInput.billingAddress || billingAddress,
       currencyCode,
@@ -266,6 +269,7 @@ export default async function placeOrder(context, input) {
   const payments = await createPayments({
     accountId,
     orderReferenceId: referenceId,
+    orderToken: fullToken.token,
     billingAddress,
     context,
     currencyCode,
@@ -278,8 +282,7 @@ export default async function placeOrder(context, input) {
 
   order.payments = payments;
 
-  if (payments.length > 0 &&
-      !payments.some((payment) => payment.status === "created")) {
+  if (payments.length > 0 && !payments.some((payment) => payment.status === "created")) {
     order.workflow = {
       status: "awaitingPayment",
       workflow: ["awaitingPayment"]
