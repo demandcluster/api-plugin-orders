@@ -1,3 +1,5 @@
+import ReactionError from "@reactioncommerce/reaction-error";
+
 /**
  * @summary Changes the status of the specified payment to completed and changes the order
  * from state `paymentPending` to `new`
@@ -9,22 +11,22 @@ export default async function completeOrderPayment(context, input) {
   const { collections: { Orders }, appEvents } = context;
   const { orderId, paymentId } = input;
 
-  const order = await Orders.findOne({ _id: orderId });
-
-  const orderWithCompletedPayment = await Orders.updateOne({
+  const { ok, value: orderWithCompletedPayment } = await Orders.findOneAndUpdate({
     "_id": orderId,
     "payments._id": paymentId
   }, {
     $set: {
-      "workflow": {
-        status: "new"
-      },
+      "workflow.status": "new",
       "payments.$.status": "completed"
     },
     $push: {
       "workflow.workflow": "new"
     }
+  }, {
+    returnOriginal: false
   });
 
-  await appEvents.emit("afterOrderCreate", { createdBy: order.accountId, order: orderWithCompletedPayment });
+  if (ok !== 1) throw new ReactionError("server-error", "Unable to update order");
+
+  await appEvents.emit("afterOrderCreate", { createdBy: orderWithCompletedPayment.accountId, order: orderWithCompletedPayment });
 }

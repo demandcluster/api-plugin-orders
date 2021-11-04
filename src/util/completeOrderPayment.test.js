@@ -5,20 +5,7 @@ test("should complete payment for an order on correct input", async () => {
   const orderId = "orderId";
   const paymentId = "paymentId";
   const accountId = "accountId";
-  const initialOrder = {
-    _id: orderId,
-    accountId,
-    payments: [
-      {
-        _id: paymentId,
-        status: "pending"
-      }
-    ],
-    workflow: {
-      status: "awaitingPayment",
-      workflow: ["awaitingPayment"]
-    }
-  };
+
   const finalOrder = {
     _id: orderId,
     accountId,
@@ -34,24 +21,26 @@ test("should complete payment for an order on correct input", async () => {
     }
   };
 
-  mockContext.collections.Orders.findOne.mockReturnValueOnce(Promise.resolve(initialOrder));
-  mockContext.collections.Orders.updateOne.mockReturnValueOnce(Promise.resolve(finalOrder));
+  mockContext.collections.Orders.findOneAndUpdate.mockReturnValueOnce(Promise.resolve({
+    ok: 1,
+    value: finalOrder
+  }));
 
   await completeOrderPayment(mockContext, { orderId, paymentId });
 
-  expect(mockContext.collections.Orders.updateOne).toHaveBeenCalledWith({
+  expect(mockContext.collections.Orders.findOneAndUpdate).toHaveBeenCalledWith({
     "_id": orderId,
     "payments._id": paymentId
   }, {
     $set: {
-      "workflow": {
-        status: "new"
-      },
+      "workflow.status": "new",
       "payments.$.status": "completed"
     },
     $push: {
       "workflow.workflow": "new"
     }
+  }, {
+    returnOriginal: false
   });
 
   expect(mockContext.appEvents.emit).toHaveBeenCalledWith("afterOrderCreate", {
