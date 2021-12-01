@@ -24,6 +24,7 @@ export default function addInvoiceToGroup({
 
   // Taxes
   const effectiveTaxRate = taxableAmount > 0 ? taxTotal / taxableAmount : 0;
+  const preTaxPricingTaxTotal = taxTotal + (taxableAmount - itemTotal);
 
   // Fulfillment
   const shippingTotal = group.shipmentMethod.rate || 0;
@@ -33,7 +34,7 @@ export default function addInvoiceToGroup({
   // Totals
   // To avoid rounding errors, be sure to keep this calculation the same between here and
   // `buildOrderInputFromCart.js` in the client code.
-  const total = +accounting.toFixed(Math.max(0, itemTotal + fulfillmentTotal + taxTotal + groupSurchargeTotal - groupDiscountTotal), 3);
+  const total = +accounting.toFixed(Math.max(0, itemTotal + fulfillmentTotal + preTaxPricingTaxTotal + groupSurchargeTotal - groupDiscountTotal), 3);
 
   group.invoice = {
     currencyCode,
